@@ -12,7 +12,6 @@ const PORT = 4444;
 const MONGODB_URI =
   "mongodb+srv://markkozhydlo:mark2010@eko-blog.nlbzo5x.mongodb.net/blog?retryWrites=true&w=majority";
 
-// Підключення до бази даних
 mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,

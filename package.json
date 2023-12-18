@@ -1,7 +1,7 @@
 {
   "name": "y",
   "version": "1.0.0",
-  "description": "",
+  "description": "це проект для Еко тех 2024",
   "main": "index.js",
   "type": "module",
   "scripts": {
