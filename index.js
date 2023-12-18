@@ -3,15 +3,18 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import { validationResult } from "express-validator";
+import "express-async-errors"; // Додано для обробки асинхронних помилок
 
 import { registerValidation } from "./validations/auth.js";
 
 import UserModel from "./models/user.js";
+import cheakAuth from "./utils/cheakAuth.js";
 
 const PORT = 4444;
 const MONGODB_URI =
   "mongodb+srv://markkozhydlo:mark2010@eko-blog.nlbzo5x.mongodb.net/blog?retryWrites=true&w=majority";
 
+// Підключення до бази даних
 mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -22,14 +25,14 @@ mongoose
   })
   .catch((err) => {
     console.error("Помилка при підключенні до бази даних", err);
-    process.exit(1);
+    throw err; // Замість process.exit(1)
   });
 
 const app = express();
 
 app.use(express.json());
 
-// Підключення до бази даних з використанням async/await
+// Оптимізовано підключення до бази даних
 const connectToDatabase = async () => {
   try {
     await mongoose.connect(MONGODB_URI, {
@@ -39,13 +42,12 @@ const connectToDatabase = async () => {
     console.log("MongoDB успішно підключено!");
   } catch (err) {
     console.error("Помилка при підключенні до бази даних", err);
-    process.exit(1);
+    throw err; // Замість process.exit(1)
   }
 };
 
 connectToDatabase();
 
-// Опрацювання запиту на логін
 app.post("/auth/login", async (req, res) => {
   try {
     const user = await UserModel.findOne({ email: req.body.email });
@@ -62,7 +64,8 @@ app.post("/auth/login", async (req, res) => {
     );
 
     if (!isValidPass) {
-      return res.status(404).json({
+      return res.status(401).json({
+        // Змінено статус на 401
         message: "Неправильний логін або пароль",
       });
     }
@@ -84,13 +87,10 @@ app.post("/auth/login", async (req, res) => {
       token,
     });
   } catch (err) {
-    res.status(500).json({
-      message: "Не вдалося авторизувтися",
-    });
+    next(err); // Додано передачу помилки в глобальний обробник помилок
   }
 });
 
-// Опрацювання запиту на реєстрацію
 app.post("/auth/register", registerValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -133,14 +133,23 @@ app.post("/auth/register", registerValidation, async (req, res) => {
   }
 });
 
-// Запуск сервера з використанням async/await
+app.get("/auth/me", cheakAuth, (req, res) => {
+  try {
+    res.json({
+      success: true, // Змінено ім'я константи
+    });
+  } catch (err) {
+    next(err); // Додано передачу помилки в глобальний обробник помилок
+  }
+});
+
 const startServer = async () => {
   try {
     await app.listen(PORT);
     console.log(`Сервер працює на порті ${PORT}`);
   } catch (err) {
     console.error("Помилка при запуску сервера", err);
-    process.exit(1);
+    throw err;
   }
 };
 
