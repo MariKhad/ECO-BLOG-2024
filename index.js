@@ -123,23 +123,34 @@ app.post("/auth/register", registerValidation, async (req, res) => {
 
     const { passwordHash, ...userData } = user._doc;
 
-    res.json({
-      ...userData,
-      token,
-    });
+    res.json(userData);
   } catch (error) {
     console.error("Помилка при обробці запиту", error);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
 
-app.get("/auth/me", cheakAuth, (req, res) => {
+app.get("/auth/me", cheakAuth, async (req, res) => {
   try {
+    const user = await UserModel.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Користувача не знайдено",
+      });
+    }
+
+    const { passwordHash, ...userData } = user._doc;
+
     res.json({
-      success: true, // Змінено ім'я константи
+      ...userData,
+      token,
     });
   } catch (err) {
-    next(err); // Додано передачу помилки в глобальний обробник помилок
+    console.log(err);
+    res.status(500).json({
+      message: "Немає доступу",
+    });
   }
 });
 
